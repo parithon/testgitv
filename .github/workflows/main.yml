@@ -1,0 +1,27 @@
+name: Pre-Release
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 6.0.x
+    - name: Setup Nerdbank.GitVersioning
+      run: dotnet tool install -g nbgv
+    - name: Version
+      id: version
+      run: echo "::set-output name=version::$(nbgv get-version -v SemVer2)"
+        
+    outputs:
+      version: ${{ steps.version.outputs.version }}
