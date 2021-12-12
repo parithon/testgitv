@@ -68,3 +68,6 @@ jobs:
 
     - name: Push release branch to origin
       run: git push origin v$NBGV_MajorMinorVersion
+  cleanup:
+    if: always()
+    run: echo 'Cleanup'
