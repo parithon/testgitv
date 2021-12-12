@@ -49,22 +49,24 @@ jobs:
       run: |
         nbgv prepare-release # --versionIncrement ${{ github.event.inputs.versionIncrement }}
         echo "::set-output name=PREVIEW_VERSION_COMMIT_MESSAGE::$(git log --format=%B -n 1 --skip 1)"
-        git checkout v$NBGV_MajorMinorVersion
+        git checkout v$env:NBGV_MajorMinorVersion
         echo "::set-output name=RELEASE_VERSION_COMMIT_MESSAGE::$(git log --format=%B -n 1 --skip 1)"
 
     - name: Sign commits on main and release branch
       run: |
-        git checkout v$NBGV_MajorMinorVersion
-        git reset --soft HEAD~1
-        git commit -S -m "${{ steps.versions.outputs.RELEASE_VERSION_COMMIT_MESSAGE }}"
+        git checkout v$env:NBGV_MajorMinorVersion
+        git commit --amend -CHEAD
+        #git reset --soft HEAD~1
+        #git commit -S -m "${{ steps.versions.outputs.RELEASE_VERSION_COMMIT_MESSAGE }}"
         git checkout main
         git reset --hard HEAD~1
-        git reset --soft HEAD~1
-        git commit -S -m "${{ steps.versions.outputs.PREVIEW_VERSION_COMMIT_MESSAGE }}"
-        git merge -S -X ours v$NBGV_MajorMinorVersion
+        git commit --amend -CHEAD
+        #git reset --soft HEAD~1
+        #git commit -S -m "${{ steps.versions.outputs.PREVIEW_VERSION_COMMIT_MESSAGE }}"
+        git merge -S -X ours v$env:NBGV_MajorMinorVersion
     
     - name: Push version.json updates to main
       run: git push origin main
 
     - name: Push release branch to origin
-      run: git push origin v$NBGV_MajorMinorVersion
+      run: git push origin v$env:NBGV_MajorMinorVersion
