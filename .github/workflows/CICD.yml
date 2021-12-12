@@ -11,7 +11,7 @@ jobs:
     if: github.event.milestone
     name: Prepare new release
     runs-on: windows-latest
-    continue-on-fail: true
+    continue-on-error: true
     environment:
       name: Release
 
