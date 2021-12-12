@@ -1,0 +1,70 @@
+name: CICD
+
+on:
+  push:
+    branches: [ main ]
+  milestone: 
+    types: [ closed ]
+
+jobs:
+  prepare-release:
+    if: github.event.milestone
+    name: Prepare new release
+    runs-on: windows-latest
+    environment:
+      name: Release
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 6.0.x
+
+    - name: Setup GIT versioning
+      uses: dotnet/nbgv@v0.4.0
+      with:
+        setAllVars: true
+
+    - name: Import GPG key
+      id: import_gpg
+      uses: crazy-max/ghaction-import-gpg@v3
+      with:
+        gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+        passphrase: ${{ secrets.GPG_KEY_PASSPHRASE }}
+
+    - name: Setup CI GIT
+      run: |
+        git config user.name "${{ steps.import_gpg.outputs.name }}"
+        git config user.email "${{ steps.import_gpg.outputs.email }}"
+        # git config --global user.signingKey ${{ steps.import_gpg.outputs.keyid }}
+        # git config --global commit.gpgsign true
+
+    - name: Increment version.json on main + create releast branch
+      id: versions
+      run: |
+        nbgv prepare-release --versionIncrement ${{ github.event.inputs.versionIncrement }}
+        echo "::set-output name=PREVIEW_VERSION_COMMIT_MESSAGE::$(git log --format=%B -n 1 --skip 1)"
+        git checkout v$NBGV_MajorMinorVersion
+        echo "::set-output name=RELEASE_VERSION_COMMIT_MESSAGE::$(git log --format=%B -n 1 --skip 1)"
+
+    - name: Sign commits on main and release branch
+      run: |
+        git checkout v$NBGV_MajorMinorVersion
+        git reset --soft HEAD~1
+        git commit -S -m "${{ steps.versions.outputs.RELEASE_VERSION_COMMIT_MESSAGE }}"
+        git checkout main
+        git reset --hard HEAD~1
+        git reset --soft HEAD~1
+        git commit -S -m "${{ steps.versions.outputs.PREVIEW_VERSION_COMMIT_MESSAGE }}"
+        git merge -S -X ours v$NBGV_MajorMinorVersion
+    
+    - name: Push version.json updates to main
+      run: git push origin main
+
+    - name: Push release branch to origin
+      run: git push origin v$NBGV_MajorMinorVersion
