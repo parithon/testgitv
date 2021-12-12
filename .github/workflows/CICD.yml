@@ -70,4 +70,7 @@ jobs:
       run: git push origin v$NBGV_MajorMinorVersion
   cleanup:
     if: always()
-    run: echo 'Cleanup'
+    name: Cleanup Action
+    runs-on: ubuntu-latest
+    steps:
+    - run: echo 'Cleanup'
