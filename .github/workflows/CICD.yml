@@ -11,6 +11,7 @@ jobs:
     if: github.event.milestone
     name: Prepare new release
     runs-on: windows-latest
+    continue-on-fail: true
     environment:
       name: Release
 
@@ -68,9 +69,3 @@ jobs:
 
     - name: Push release branch to origin
       run: git push origin v$NBGV_MajorMinorVersion
-  cleanup:
-    if: always()
-    name: Cleanup Action
-    runs-on: ubuntu-latest
-    steps:
-    - run: echo 'Cleanup'
